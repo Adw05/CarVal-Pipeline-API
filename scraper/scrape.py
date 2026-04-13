@@ -8,17 +8,17 @@ from psycopg2.extras import execute_values
 from datetime import datetime
 from dotenv import load_dotenv
 
-DB_URL = os.environ["SUPABASE_DB_URL"]
+DB_URL = os.getenv("SUPABASE_DB_URL")
 
 EMIRATES = {
-    "Dubai":           "https://www.dubicars.com/cars-for-sale-in-dubai.html",
-    "Abu Dhabi":       "https://www.dubicars.com/cars-for-sale-in-abu-dhabi.html",
-    "Sharjah":         "https://www.dubicars.com/cars-for-sale-in-sharjah.html",
-    "Ajman":           "https://www.dubicars.com/cars-for-sale-in-ajman.html",
-    "Al Ain":          "https://www.dubicars.com/cars-for-sale-in-al-ain.html",
-    "Fujairah":        "https://www.dubicars.com/cars-for-sale-in-fujairah.html",
-    "Ras Al Khaimah":  "https://www.dubicars.com/cars-for-sale-in-ras-al-khaimah.html",
-    "Umm Al Quwain":   "https://www.dubicars.com/cars-for-sale-in-umm-al-quwain.html",
+    "Dubai":           os.getenv("Dubai_url"),
+    "Abu Dhabi":       os.getenv("Abu_Dhabi_url"),
+    "Sharjah":         os.getenv("Sharjah_url"),
+    "Ajman":           os.getenv("Ajman_url"),
+    "Al Ain":          os.getenv("Al_Ain_url"),
+    "Fujairah":        os.getenv("Fujairah_url"),
+    "Ras Al Khaimah":  os.getenv("Ras_Al_Khaimah_url"),
+    "Umm Al Quwain":   os.getenv("Umm_Al_Quwain_url"),
 }
 
 HEADERS = {
@@ -28,7 +28,7 @@ HEADERS = {
         "Chrome/120.0.0.0 Safari/537.36"
     )
 }
-MAX_PAGES = 10
+MAX_PAGES = 5
 
 
 
