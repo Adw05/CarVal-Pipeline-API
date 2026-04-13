@@ -69,12 +69,15 @@ def safe_int(val):
 
 def parse_card(card, emirate: str) -> dict | None:
     try:
-        raw = card.get("data-mixpanel-detail", "{}")
-        raw = raw.replace("'", '"')
+        # BeautifulSoup's .get() automatically decodes &quot; to "
+        raw = card.get("data-mixpanel-detail")
+        if not raw:
+            return None
+            
         data = json.loads(raw)
 
         return {
-            "listing_id":   str(card.get("data-listing-id", "")),
+            "listing_id":   str(card.get("data-item-id", "")), # HTML shows data-item-id, not data-listing-id
             "manufacturer": data.get("item_make", "N/A"),
             "model":        data.get("item_model", "N/A"),
             "year":         safe_int(data.get("item_year")),
@@ -87,8 +90,8 @@ def parse_card(card, emirate: str) -> dict | None:
             "cylinder":     safe_int(data.get("item_cylinder")),
             "location":     data.get("item_location", emirate),
         }
-    except (json.JSONDecodeError, AttributeError) as e:
-        print(f"  parse error: {e}")
+    except Exception as e:
+        print(f"  Parse error for ID {card.get('data-item-id')}: {e}")
         return None
 
 
@@ -96,7 +99,7 @@ def parse_card(card, emirate: str) -> dict | None:
 def scrape_emirate(emirate: str, base_url: str) -> list[dict]:
     listings = []
     for page in range(1, MAX_PAGES + 1):
-        url = f"{base_url}?page={page}" if page > 1 else base_url
+        url = f"{base_url}&page={page}" if page > 1 else base_url
         try:
             response = requests.get(url, headers=HEADERS, timeout=10)
             response.raise_for_status()
@@ -129,7 +132,15 @@ def scrape_emirate(emirate: str, base_url: str) -> list[dict]:
 def upload(rows: list[dict]):
     conn = psycopg2.connect(DB_URL)
     cur  = conn.cursor()
+
+    # Create table if not exists
     cur.execute(CREATE_TABLE_SQL)
+    conn.commit()
+
+    # Check row count before insert
+    cur.execute("SELECT COUNT(*) FROM car_listings_raw;")
+    before = cur.fetchone()[0]
+    print(f"Rows in DB before insert: {before}")
 
     values = [
         (
@@ -140,9 +151,24 @@ def upload(rows: list[dict]):
         for r in rows if r and r.get("listing_id")
     ]
 
-    execute_values(cur, INSERT_SQL, values)
-    conn.commit()
-    print(f"Inserted {cur.rowcount} new rows (duplicates skipped).")
+    print(f"Attempting to insert {len(values)} rows...")
+
+    try:
+        execute_values(cur, INSERT_SQL, values, page_size=100)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Insert failed, rolled back. Error: {e}")
+        cur.close()
+        conn.close()
+        return
+
+    # Check row count after insert
+    cur.execute("SELECT COUNT(*) FROM car_listings_raw;")
+    after = cur.fetchone()[0]
+    print(f"Rows in DB after insert:  {after}")
+    print(f"New rows added:           {after - before}")
+
     cur.close()
     conn.close()
 
