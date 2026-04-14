@@ -1,0 +1,62 @@
+name: Weekly Pipeline — Scrape → Retrain → Reload
+
+on:
+  schedule:
+    - cron: "0 2 * * 0"       # Runs every Sunday at 2:00 AM UTC
+  workflow_dispatch:          
+
+jobs:
+  scrape:
+    name: Scrape & Upload to Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 15       # Safety kill-switch
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"        # Enables caching for pip dependencies
+          
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 psycopg2-binary python-dotenv
+        
+      - name: Run scraper
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: python scraper/scrape.py
+
+  retrain:
+    name: Retrain & Push to Hugging Face
+    runs-on: ubuntu-latest
+    needs: scrape
+    timeout-minutes: 30       # TF training can take time; kill if it hangs > 30m
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"        # Pulls heavy ML libraries from cache instantly
+          
+      - name: Install dependencies
+        run: |
+          pip install tensorflow scikit-learn pandas numpy psycopg2-binary joblib huggingface_hub python-dotenv
+          
+      - name: Retrain model
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          HF_TOKEN:        ${{ secrets.HF_TOKEN }}
+          HF_REPO_ID:      ${{ secrets.HF_REPO_ID }}
+        run: python ml/retrain.py
+
+  reload:
+    name: Hot-Reload API
+    runs-on: ubuntu-latest
+    needs: retrain
+    steps:
+      - name: Reload model in CarVal API
+        run: |
+          curl -sf --retry 3 --retry-delay 10 --max-time 60 -X POST \
+            "${{ secrets.API_URL }}/reload-model?token=${{ secrets.RELOAD_TOKEN }}" \
+            | grep -q "reloaded" && echo "✓ Reload successful" || exit 1

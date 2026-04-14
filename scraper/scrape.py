@@ -10,14 +10,14 @@ load_dotenv()
 DB_URL = os.getenv("SUPABASE_DB_URL")
 
 EMIRATES = {
-    "Dubai":          os.getenv("Dubai_url"),
-    "Abu Dhabi":      os.getenv("Abu_Dhabi_url"),
-    "Sharjah":        os.getenv("Sharjah_url"),
-    "Ajman":          os.getenv("Ajman_url"),
-    "Al Ain":         os.getenv("Al_Ain_url"),
-    "Fujairah":       os.getenv("Fujairah_url"),
-    "Ras Al Khaimah": os.getenv("Ras_Al_Khaimah_url"),
-    "Umm Al Quwain":  os.getenv("Umm_Al_Quwain_url"),
+    "Dubai": "https://www.dubicars.com/search?c=new-and-used&cr=AED&did=&emif=&emit=&gen=&k=&kf=&kt=&l=3&ma=&mo=0&moc=&o=&pf=&pt=&set=bu&trg=&ul=AE&yf=&yt=&",
+    "Abu Dhabi": "https://www.dubicars.com/search?c=new-and-used&cr=AED&did=&emif=&emit=&eo%5B0%5D=can-be-exported&eo%5B1%5D=not-for-export&gen=&k=&kf=&kt=&l=1&ma=&mo=0&moc=&o=&pf=&pt=&set=bu&trg=&ul=AE&yf=&yt=&",
+    "Sharjah": "https://www.dubicars.com/search?c=new-and-used&cr=AED&did=&emif=&emit=&eo%5B0%5D=can-be-exported&eo%5B1%5D=not-for-export&gen=&k=&kf=&kt=&l=6&ma=&mo=0&moc=&o=&pf=&pt=&set=bu&trg=&ul=AE&yf=&yt=&",
+    "Ajman": "https://www.dubicars.com/search?c=new-and-used&cr=AED&did=&emif=&emit=&eo%5B0%5D=can-be-exported&eo%5B1%5D=not-for-export&gen=&k=&kf=&kt=&l=2&ma=&mo=0&moc=&o=&pf=&pt=&set=bu&trg=&ul=AE&yf=&yt=&",
+    "Al Ain": "https://www.dubicars.com/search?o=&did=&gen=&trg=&moc=&c=new-and-used&ul=AE&cr=AED&k=&mg=&yf=&yt=&set=bu&pf=&pt=&emif=&emit=&kf=&kt=&eo%5B%5D=can-be-exported&eo%5B%5D=not-for-export&l=8&noi=30",
+    "Fujairah": "https://www.dubicars.com/search?o=&did=&gen=&trg=&moc=&c=new-and-used&ul=AE&cr=AED&k=&mg=&yf=&yt=&set=bu&pf=&pt=&emif=&emit=&kf=&kt=&eo%5B%5D=can-be-exported&eo%5B%5D=not-for-export&l=4&noi=30",
+    "Ras Al Khaimah": "https://www.dubicars.com/search?o=&did=&gen=&trg=&moc=&c=new-and-used&ul=AE&cr=AED&k=&mg=&yf=&yt=&set=bu&pf=&pt=&emif=&emit=&kf=&kt=&eo%5B%5D=can-be-exported&eo%5B%5D=not-for-export&l=5&noi=30",
+    "Umm Al Quwain": "https://www.dubicars.com/search?o=&did=&gen=&trg=&moc=&c=new-and-used&ul=AE&cr=AED&k=&ma=&mo=0&yf=&yt=&set=bu&pf=&pt=&emif=&emit=&kf=&kt=&eo%5B%5D=can-be-exported&eo%5B%5D=not-for-export&l=7",
 }
 
 HEADERS = {
@@ -69,7 +69,7 @@ def safe_int(val):
 
 def parse_card(card, emirate: str) -> dict | None:
     try:
-        # BeautifulSoup's .get() automatically decodes &quot; to "
+        
         raw = card.get("data-mixpanel-detail")
         if not raw:
             return None
@@ -77,7 +77,7 @@ def parse_card(card, emirate: str) -> dict | None:
         data = json.loads(raw)
 
         return {
-            "listing_id":   str(card.get("data-item-id", "")), # HTML shows data-item-id, not data-listing-id
+            "listing_id":   str(card.get("data-item-id", "")), 
             "manufacturer": data.get("item_make", "N/A"),
             "model":        data.get("item_model", "N/A"),
             "year":         safe_int(data.get("item_year")),
